@@ -43,7 +43,7 @@ void Heap::downheap(int i)
 
 
 
-void Heap::insert(Labelled *t,real v)
+void Heap::insert(Labelled *t,double v)
 {
     if( size == maxLength() )
     {
@@ -62,7 +62,7 @@ void Heap::insert(Labelled *t,real v)
     upheap(i);
 }
 
-void Heap::update(Labelled *t,real v)
+void Heap::update(Labelled *t,double v)
 {
     int i = t->token;
 
@@ -77,7 +77,7 @@ void Heap::update(Labelled *t,real v)
 	return;
     }
 
-    real old=ref(i).import;
+    double old=ref(i).import;
     ref(i).import = v;
 
     if( v<old )

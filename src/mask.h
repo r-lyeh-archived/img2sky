@@ -10,30 +10,30 @@ public:
     ImportMask() { width=0; height=0; }
 
 
-    virtual real apply(int /*x*/, int /*y*/, real val) { return val; }
+    virtual double apply(int /*x*/, int /*y*/, double val) { return val; }
 };
 
 
-class RealMask : public ImportMask
+class realMask : public ImportMask
 {
-    real *data;
+    double *data;
 
 public:
-    RealMask(int width, int height);
+    realMask(int width, int height);
 
-    inline real& ref(int x, int y);
-    real apply(int x, int y, real val) { return ref(x,y) * val; }
+    inline double& ref(int x, int y);
+    double apply(int x, int y, double val) { return ref(x,y) * val; }
 };
 
 
-inline RealMask::RealMask(int w, int h)
+inline realMask::realMask(int w, int h)
 {
     width = w;
     height = h;
-    data = (real *)calloc(w*h, sizeof(real));
+    data = (double *)calloc(w*h, sizeof(double));
 }
 
-inline real& RealMask::ref(int i, int j)
+inline double& realMask::ref(int i, int j)
 {
 #ifdef SAFETY
 	assert(i>=0); assert(j>=0); assert(i<width); assert(j<height);
@@ -42,6 +42,6 @@ inline real& RealMask::ref(int i, int j)
 	return data[j*width + i];
 }
 
-extern RealMask *readMask(std::istream&);
+extern realMask *readMask(std::istream&);
 
 #endif

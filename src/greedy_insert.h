@@ -21,7 +21,7 @@ public:
     void update(Subdivision&);
 
 
-    void setCandidate(int x,int y, real) { sx=x; sy=y; }
+    void setCandidate(int x,int y, double) { sx=x; sy=y; }
     void getCandidate(int *x, int *y) { *x=sx; *y=sy; }
 };
 
@@ -31,11 +31,11 @@ class Candidate
 public:
 
     int x, y;
-    real import;
+    double import;
 
     Candidate() { import = -HUGE; }
 
-    void consider(int sx, int sy, real i)
+    void consider(int sx, int sy, double i)
     {
 	if( i > import )
 	{
@@ -61,7 +61,7 @@ protected:
     void compute_plane(Plane&, Triangle&, Map&);
 
     void scan_triangle_line(Plane& plane,
-			    int y, real x1, real x2,
+			    int y, double x1, double x2,
 			    Candidate& candidate);
 
 public:
@@ -77,9 +77,9 @@ public:
     int greedyInsert();
 
     unsigned int pointCount() { return count; }
-    real maxError();
-    real rmsError();
-    real eval(int x,int y);
+    double maxError();
+    double rmsError();
+    double eval(int x,int y);
 };
 
 //

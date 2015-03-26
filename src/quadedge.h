@@ -1,5 +1,4 @@
-#ifndef QUADEDGE_INCLUDED // -*- C++ -*-
-#define QUADEDGE_INCLUDED
+#pragma once
 
 #include "Geom.h"
 
@@ -58,25 +57,19 @@ public:
     //
     // The fundamental topological operator
     friend void splice(Edge *a, Edge *b);
+
+    template<typename ostream>
+    inline friend ostream& operator<<(ostream& out, const Edge *e) {
+        return out << "{ " << e->Org() << " ---> " << e->Dest() << " }";
+    }
 };
 
-
-inline boolean rightOf(const Vec2& x, const Edge *e)
+inline bool rightOf(const Vec2& x, const Edge *e)
 {
     return rightOf(x, e->Org(), e->Dest());
 }
 
-inline boolean leftOf(const Vec2& x, const Edge *e)
+inline bool leftOf(const Vec2& x, const Edge *e)
 {
     return leftOf(x, e->Org(), e->Dest());
 }
-
-
-#ifdef IOSTREAMH
-inline ostream& operator<<(ostream& out, const Edge *e)
-{
-    return out << "{ " << e->Org() << " ---> " << e->Dest() << " }";
-}
-#endif
-
-#endif

@@ -1,4 +1,6 @@
+#include <cassert>
 #include <iostream>
+#include <algorithm>
 #include "greedy_insert.h"
 #include "mask.h"
 
@@ -102,17 +104,17 @@ static void order_triangle_points(Vec2 *by_y,
 
 void GreedySubdivision::scan_triangle_line(Plane& plane,
 					   int y,
-					   real x1, real x2,
+					   double x1, double x2,
 					   Candidate& candidate)
 {
-    int startx = (int)ceil(MIN(x1,x2));
-    int endx   = (int)floor(MAX(x1,x2));
+    int startx = (int)ceil(std::min(x1,x2));
+    int endx   = (int)floor(std::max(x1,x2));
 
     if( startx > endx ) return;
 
-    real z0 = plane(startx, y);
-    real dz = plane.a;
-    real z, diff;
+    double z0 = plane(startx, y);
+    double dz = plane.a;
+    double z, diff;
 
     for(int x=startx;x<=endx;x++)
     {
@@ -145,11 +147,11 @@ void GreedySubdivision::scanTriangle(TrackedTriangle& T)
     int starty, endy;
     Candidate candidate;
 
-    real dx1 = (v1[X] - v0[X]) / (v1[Y] - v0[Y]);
-    real dx2 = (v2[X] - v0[X]) / (v2[Y] - v0[Y]);
+    double dx1 = (v1[X] - v0[X]) / (v1[Y] - v0[Y]);
+    double dx2 = (v2[X] - v0[X]) / (v2[Y] - v0[Y]);
 
-    real x1 = v0[X];
-    real x2 = v0[X];
+    double x1 = v0[X];
+    double x2 = v0[X];
 
     starty = (int)v0[Y];
     endy   = (int)v1[Y];
@@ -189,9 +191,7 @@ void GreedySubdivision::scanTriangle(TrackedTriangle& T)
     }
     else
     {
-#ifdef SAFETY
 	assert( !is_used(candidate.x, candidate.y) );
-#endif
 
 	T.setCandidate(candidate.x, candidate.y, candidate.import);
 	if( T.token == NOT_IN_HEAP )
@@ -219,7 +219,7 @@ int GreedySubdivision::greedyInsert()
 {
     heap_node *node = heap->extract();
 
-    if( !node ) return False;
+    if( !node ) return false;
 
     TrackedTriangle &T = *(TrackedTriangle *)node->obj;
     int sx, sy;
@@ -227,10 +227,10 @@ int GreedySubdivision::greedyInsert()
 
     select(sx, sy, &T);
 
-    return True;
+    return true;
 }
 
-real GreedySubdivision::maxError()
+double GreedySubdivision::maxError()
 {
     heap_node *node = heap->top();
 
@@ -240,9 +240,9 @@ real GreedySubdivision::maxError()
     return node->import;
 }
 
-real GreedySubdivision::rmsError()
+double GreedySubdivision::rmsError()
 {
-    real err = 0.0;
+    double err = 0.0;
     int width = H->width;
     int height = H->height;
 
@@ -251,7 +251,7 @@ real GreedySubdivision::rmsError()
     for(int i=0; i<width; i++)
 	for(int j=0; j<height; j++)
 	{
-	    real diff = eval(i, j) - H->eval(i, j);
+	    double diff = eval(i, j) - H->eval(i, j);
 	    err += diff * diff;
 	}
 
@@ -259,7 +259,7 @@ real GreedySubdivision::rmsError()
 }
 
 
-real GreedySubdivision::eval(int x,int y) 
+double GreedySubdivision::eval(int x,int y) 
 {
     Vec2 p(x,y);
     Triangle *T = locate(p)->Lface();

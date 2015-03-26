@@ -1,20 +1,12 @@
-#ifndef ARRAY_INCLUDED // -*- C++ -*-
-#define ARRAY_INCLUDED
+#pragma once
 
-#ifndef _INC_MEMORY
-#include <memory.h>
-#endif
+#include <cassert>
+#include <algorithm>
 
 //
 // Array classes
 //
 // Taken from gfxTools.h 1.2
-
-#ifndef MAX
-#define MAX(a,b) (((a)>(b))?(a):(b))
-#define MIN(a,b) (((a)>(b))?(b):(a))
-#endif
-
 
 template<class T>
 class array {
@@ -58,10 +50,8 @@ inline void array<T>::free()
 template<class T>
 inline T& array<T>::ref(int i)
 {
-#ifdef SAFETY
     assert( data );
     assert( i>=0 && i<len );
-#endif
     return data[i];
 }
 
@@ -70,12 +60,10 @@ inline void array<T>::resize(int l)
 {
     T *old = data;
     data = new T[l];
-    data = (T *)memcpy(data,old,MIN(len,l)*sizeof(T));
+    data = (T *)memcpy(data,old,std::min(len,l)*sizeof(T));
     len = l;
     delete[] old;
 }
-
-
 
 template<class T>
 class array2 {
@@ -117,12 +105,9 @@ inline void array2<T>::free()
 template<class T>
 inline T& array2<T>::ref(int i, int j)
 {
-#ifdef SAFETY
     assert( data );
     assert( i>=0 && i<w );
     assert( j>=0 && j<h );
-#endif
     return data[j*w + i];
 }
 
-#endif

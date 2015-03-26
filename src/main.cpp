@@ -10,19 +10,13 @@
 
 #define IMG2SKY_BUILD "DEBUG"
 #define IMG2SKY_URL "https://github.com/r-lyeh/img2sky"
-#define IMG2SKY_VERSION "0.0.0"
+#define IMG2SKY_VERSION "0.0.1"
 #define IMG2SKY_TEXT "img2sky " IMG2SKY_VERSION " (" IMG2SKY_BUILD ")"
 
 #if defined(NDEBUG) || defined(_NDEBUG)
 #undef  IMG2SKY_BUILD
 #define IMG2SKY_BUILD "RELEASE"
 #endif
-
-std::string head( const std::string &appname ) {
-    std::stringstream cout;
-    cout << appname << ": " << IMG2SKY_BUILD ". Compiled on " __DATE__ " - " IMG2SKY_URL;
-    return cout.str();
-}
 
 GreedySubdivision   *mesh;
 Map                 *DEM;
@@ -31,16 +25,18 @@ TGAFile             *TGA;
 
 static ImportMask   default_mask;
 
+// quality [0..100] as error treshold [0..INF]
+double Q( double q ) {
+    return abs(-log(q*q/10000.0));
+}
+
 bool            make_sphere         = false;
 bool            strip_hod           = true;
 unsigned long   point_limit         = -1;
-unsigned long   partition_count_hod = 2;
-real            error_threshold     = 2.f;
+double          error_threshold     = Q(50.00); // defaults to quality 50%
 
 std::vector<std::string> to_process;
 std::stringstream used_options;
-
-using namespace std;
 
 std::string lowercase( std::string input ) {
     for( auto &ch : input ) {
@@ -49,15 +45,16 @@ std::string lowercase( std::string input ) {
     return input;
 }
 
-void help() {
-    std::cout << head("img2sky") << std::endl;
+void help( const std::string &arg0 ) {
+    std::stringstream cout;
 
+    std::cout << arg0 << ": " << IMG2SKY_TEXT ". Compiled on " __DATE__ " - " IMG2SKY_URL << std::endl;
     std::cout << std::endl;
     std::cout << "Usage:" << std::endl;
     std::cout << "    img2sky [options] input.img [...]" << std::endl;
-    std::cout << "        -q,--quality integer   Quality polygon setting [0..100] (lowest..highest) (default: 90)" << std::endl;
-    std::cout << "        -v,--vertices integer  Specify maximum number of vertices (default: disabled)" << std::endl;
-    std::cout << "        -f,--fast              Disable stripfication (default: enabled)" << std::endl;
+    std::cout << "        -q,--quality float     Quality for vertex density [0..100] (lowest..highest) (default: 50.00)" << std::endl;
+    std::cout << "        -v,--vertices integer  Specify maximum number of vertices [4..N] (default: disabled)" << std::endl;
+    std::cout << "        -f,--fast              Disable triangle stripification (default: enabled)" << std::endl;
     std::cout << "        -s,--sphere            Create sphere mesh (default: plane)" << std::endl;
     std::cout << std::endl;
 
@@ -70,114 +67,97 @@ void help() {
     std::cout << " texture files." << std::endl;
     std::cout << "    img2sky writes .ply mesh files." << std::endl << std::endl;
 
-    std::cout << "Quality and number of vertices should be mutually exclusive options. Ie, you cannot specify both at same time." << std::endl;
-    std::cout << "If you are the big/expensive meshes guy, use any of { large textures, high quality setting and/or high number of vertex settings };" << std::endl;
-    std::cout << "else use any of { small textures, low quality setting and/or low number of vertex settings }." << std::endl;
+    std::cout << "Quality and number of vertices should be mutually exclusive options. You can specify both at same time, but does not make much sense at all." << std::endl;
+    std::cout << "And if you are the expensive/smooth meshes guy kind, then use larger textures, increase quality and/or number of vertices." << std::endl;
 
     std::cout << std::endl;
 }
 
-bool process_cmdline(int nNumArgs, const char *pszArgs[]) {
+bool parse_cmdline( int argc, const char **argv ) {
 
     // Print message
-    if (nNumArgs == 1) {
-        help();
+    if (argc == 1) {
+        help(argv[0]);
         return true; 
     }
 
-    // Retrive the filename;
-    static char szFilename[_MAX_PATH];
-    static char szFilenameO[_MAX_PATH]; // OBJ
-    static char szFilenameH[_MAX_PATH]; // HOD
-    static char szFilenameP[_MAX_PATH]; // PLY
-
-    static char szFilenameM[_MAX_PATH]; // Mask
-    static char szFilenameS[_MAX_PATH]; // Script
-
-    bool bOptionSet = false;
-
-    szFilename[0] = 
-    szFilenameO[0] = 
-    szFilenameH[0] = 
-    szFilenameP[0] = 
-    szFilenameM[0] = 
-    szFilenameS[0] = 0;
-
     // Process command-line options.
-    for (int i = 1; i < nNumArgs; i++) {
-        std::string sarg = lowercase(pszArgs[i]);
+    for (int i = 1; i < argc; i++) {
+        std::string sarg = lowercase(argv[i]);
         const char *arg = sarg.c_str();
 
         // Help
-        if (!strcmp(arg, "/?") || !strcmp(arg, "-h") || !strcmp(arg, "--help") ) {
-            help();
-            return 0;
+        if (!strcmp(arg, "-h") || !strcmp(arg, "--help") || !strcmp(arg, "/?")) {
+            help(argv[0]);
+            return true;
         }
 
-        // Set error threshold.
-        if (strstr(arg, "-e") || strstr(arg, "/e")) {
-            string szTmp = arg;
-            szTmp.erase(0, 3);
-            error_threshold = fabsf(atof(szTmp.c_str()));
-            bOptionSet = true;
+        // Set error threshold (~vertex density; ~quality)
+        if (i + 1 < argc)
+        if (!strcmp(arg, "-q") || !strcmp(arg, "--quality") || !strcmp(arg, "/quality")) {
+            float quality = fabsf(atof(argv[++i]));
+            error_threshold = Q(quality > 100 ? 100 : quality);
 
-            used_options << " (error-threshold: " << (float)error_threshold << ")";
+            used_options << " (error-threshold: " << float(error_threshold) << ")";
             continue;
         }
 
-        // Set point limit.
-        if (strstr(arg, "-v") || strstr(arg, "/v")) {
-            string szTmp = arg;
-            szTmp.erase(0, 3);
-            point_limit = (unsigned long)abs(atol(szTmp.c_str()));
-            bOptionSet = true;
-
+        // Set vertex limit
+        if (i + 1 < argc)
+        if (!strcmp(arg, "-v") || !strcmp(arg, "--vertices") || !strcmp(arg, "/vertices")) {
+            point_limit = strtoul(argv[++i], 0, 0);
+            if( point_limit < 4 ) point_limit = 4;
+            
             used_options << " (point-limit: " << point_limit << ")";
             continue;
         }
 
         // Set mesh type
-        if (strstr(arg, "-p") || strstr(arg, "--plane") || strstr(arg, "/plane")) {
+        if (!strcmp(arg, "-p") || !strcmp(arg, "--plane") || !strcmp(arg, "/plane")) {
             make_sphere = false;
             used_options << " (plane)";
             continue;
         }
-        if (strstr(arg, "-s") || strstr(arg, "--sphere") || strstr(arg, "/sphere")) {
+        if (!strcmp(arg, "-s") || !strcmp(arg, "--sphere") || !strcmp(arg, "/sphere")) {
             make_sphere = true;
             used_options << " (sphere)";
             continue;
         }
 
         // Disable Stripification
-        if (strstr(arg, "-f") || strstr(arg, "--fast") || strstr(arg, "/fast")) {
+        if (!strcmp(arg, "-f") || !strcmp(arg, "--fast") || !strcmp(arg, "/fast")) {
             strip_hod = false;
             used_options << " (stripification: disabled)";
             continue;
         }
 
         // Nothing else. Must be a filename.
-        to_process.push_back( pszArgs[i] );
+        to_process.push_back( argv[i] );
     }
 
     return true;
 }
 
 int main(int argc, const char **argv) {
-    unsigned errors = 0;
 
-    if( process_cmdline(argc, argv) ) {
+    if( !parse_cmdline( argc, argv ) ) {
         return -1;
     }
 
+    if( to_process.empty() && argc > 1 ) {
+        return -1;
+    }
+
+    unsigned errors = 0;
     for( auto &file : to_process ) {
         // Set the output filename.
-        auto output_filename_p = std::string() + file + ".ply";
+        auto ply = std::string() + file + ".ply";
 
         ////////////////////////////////////////////////////////////////
         DEM = readTGA(file.c_str());
 
         if(!DEM) {
-            cout << "(unable to load image)\r[FAIL]\n";
+            std::cout << "(unable to load image)\r[FAIL]\n";
             ++errors;
             continue;
         }
@@ -190,8 +170,25 @@ int main(int argc, const char **argv) {
         if (point_limit == -1)
             point_limit = DEM->width * DEM->height;
 
-        greedy_insertion();
-        generate_output(output_filename_p.c_str(), PLYfile);
+        bool local_error = true;
+        if( greedy_insertion() ) {
+            std::cout << used_options.str();
+            std::cout << " (max-error: " << mesh->maxError() << ")";
+            std::cout << " (vertices: " << mesh->pointCount() << ")";
+            /*
+            std::cout << std::endl << "Goal conditions met:" << std::endl;
+            std::cout << "     error=" << mesh->maxError()
+             << " [thresh="<< error_threshold << "]" << std::endl;
+            std::cout << "     points=" << mesh->pointCount()
+             << " [limit=" << point_limit << "]" << std::endl;
+            */
+            if( output_ply(ply.c_str()) ) {
+                local_error = false;
+            }
+        }
+
+        std::cout << ( local_error ? "\r[FAIL]\n" : "\r[ OK ]\n" );
+        errors += local_error;
 
         if( TGA ) {
             TGA->CleanUp();     

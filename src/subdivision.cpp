@@ -145,33 +145,33 @@ void Subdivision::overFaces(face_callback fn, void *closure)
 // Random predicates
 //
 
-boolean Subdivision::ccwBoundary(const Edge *e)
+bool Subdivision::ccwBoundary(const Edge *e)
 {
     return !rightOf(e->Oprev()->Dest(), e);
 }
 
 
-boolean Subdivision::onEdge(const Vec2& x, Edge *e)
+bool Subdivision::onEdge(const Vec2& x, Edge *e)
 {
-    real t1, t2, t3;
+    double t1, t2, t3;
 
     t1 = (x - e->Org()).length();
     t2 = (x - e->Dest()).length();
 
     if (t1 < EPS || t2 < EPS)
-	return True;
+	return true;
 
     t3 = (e->Org() - e->Dest()).length();
 
     if (t1 > t3 || t2 > t3)
-	return False;
+	return false;
 
     Line line(e->Org(), e->Dest());
     return (fabs(line.eval(x)) < EPS);
 }
 
 
-boolean Subdivision::isInterior(Edge *e)
+bool Subdivision::isInterior(Edge *e)
 //
 // Tests whether e is an interior edge.
 // 
@@ -184,7 +184,7 @@ boolean Subdivision::isInterior(Edge *e)
             e->Rnext()->Rnext()->Rnext() == e );
 }
 
-boolean Subdivision::shouldSwap(const Vec2& x, Edge *e)
+bool Subdivision::shouldSwap(const Vec2& x, Edge *e)
 {
         Edge *t = e->Oprev();
         return inCircle(e->Org(), t->Dest(), e->Dest(), x);
@@ -197,7 +197,7 @@ boolean Subdivision::shouldSwap(const Vec2& x, Edge *e)
 Edge *Subdivision::locate(const Vec2& x, Edge *start)
 {
     Edge *e = start;
-    real t = triArea(x, e->Dest(), e->Org());
+    double t = triArea(x, e->Dest(), e->Org());
 
     if (t>0) {                  // x is to the right of edge e
         t = -t;
@@ -205,13 +205,13 @@ Edge *Subdivision::locate(const Vec2& x, Edge *start)
     }
 
 
-    while (True)
+    while (true)
     {
         Edge *eo = e->Onext();
         Edge *ed = e->Dprev();
 
-        real to = triArea(x, eo->Dest(), eo->Org());
-        real td = triArea(x, ed->Dest(), ed->Org());
+        double to = triArea(x, eo->Dest(), eo->Org());
+        double td = triArea(x, ed->Dest(), ed->Org());
 
         if (td>0)                       // x is below ed
             if (to>0 || to==0 && t==0) {// x is interior, or origin endpoint
@@ -351,7 +351,7 @@ void Subdivision::optimize(Vec2& x, Edge *s)
 		break;
 	}
 
-    } while( True );
+    } while( true );
 
     //
     // Now, update all the triangles

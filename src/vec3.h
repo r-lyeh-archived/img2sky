@@ -1,59 +1,61 @@
-#ifndef VEC3_INCLUDED // -*- C++ -*-
-#define VEC3_INCLUDED
+#pragma once
 
 class Vec3 {
 protected:
-    real elt[3];
+    double elt[3];
 
     inline void copy(const Vec3& v);
 
 public:
     // Standard constructors
-    Vec3(real x=0, real y=0, real z=0) { elt[0]=x; elt[1]=y; elt[2]=z; }
-    Vec3(const Vec2& v, real z) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=z; }
+    Vec3(double x=0, double y=0, double z=0) { elt[0]=x; elt[1]=y; elt[2]=z; }
+    Vec3(const Vec2& v, double z) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=z; }
     Vec3(const Vec3& v) { copy(v); }
-    Vec3(const real *v) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=v[2]; }
+    Vec3(const double *v) { elt[0]=v[0]; elt[1]=v[1]; elt[2]=v[2]; }
 
     // Access methods
-    real& operator()(int i)             { return elt[i]; }
-    const real& operator()(int i) const { return elt[i]; }
-    real& operator[](int i)             { return elt[i]; }
-    const real& operator[](int i) const { return elt[i]; }
+    double& operator()(int i)             { return elt[i]; }
+    const double& operator()(int i) const { return elt[i]; }
+    double& operator[](int i)             { return elt[i]; }
+    const double& operator[](int i) const { return elt[i]; }
 
     // Assignment methods
     inline Vec3& operator=(const Vec3& v);
     inline Vec3& operator+=(const Vec3& v);
     inline Vec3& operator-=(const Vec3& v);
-    inline Vec3& operator*=(real s);
-    inline Vec3& operator/=(real s);
+    inline Vec3& operator*=(double s);
+    inline Vec3& operator/=(double s);
 
     // Arithmetic methods
     inline Vec3 operator+(const Vec3& v) const;
     inline Vec3 operator-(const Vec3& v) const;
     inline Vec3 operator-() const;
 
-    inline Vec3 operator*(real s) const;
-    inline Vec3 operator/(real s) const;
-    inline real operator*(const Vec3& v) const;
+    inline Vec3 operator*(double s) const;
+    inline Vec3 operator/(double s) const;
+    inline double operator*(const Vec3& v) const;
     inline Vec3 operator^(const Vec3& v) const;
 
 
-#ifdef IOSTREAMH
     // Input/Output methods
-    friend ostream& operator<<(ostream&, const Vec3&);
-    friend istream& operator>>(istream&, Vec3&);
-#endif
+    template<typename ostream>
+    inline friend ostream& operator<<(ostream& out, const Vec3& v) {
+        return out << "[" << v[0] << " " << v[1] << " " << v[2] << "]";
+    }
+
+    template<typename istream>
+    inline friend istream& operator>>(istream& in, Vec3& v) {
+        return in >> "[" >> v[0] >> v[1] >> v[2] >> "]";
+    }
 
     // Additional vector methods
-    inline real length();
-    inline real norm();
-    inline real norm2();
+    inline double length();
+    inline double norm();
+    inline double norm2();
 
-    inline real unitize();
+    inline double unitize();
 };
 
-
-
 
 inline void Vec3::copy(const Vec3& v)
 {
@@ -82,7 +84,7 @@ inline Vec3& Vec3::operator-=(const Vec3& v)
     return *this;
 }
 
-inline Vec3& Vec3::operator*=(real s)
+inline Vec3& Vec3::operator*=(double s)
 {
     elt[0] *= s;
     elt[1] *= s;
@@ -90,7 +92,7 @@ inline Vec3& Vec3::operator*=(real s)
     return *this;
 }
 
-inline Vec3& Vec3::operator/=(real s)
+inline Vec3& Vec3::operator/=(double s)
 {
     elt[0] /= s;
     elt[1] /= s;
@@ -117,19 +119,19 @@ inline Vec3 Vec3::operator-() const
     return Vec3(-elt[0], -elt[1], -elt[2]);
 }
 
-inline Vec3 Vec3::operator*(real s) const
+inline Vec3 Vec3::operator*(double s) const
 {
     Vec3 w(elt[0]*s, elt[1]*s, elt[2]*s);
     return w;
 }
 
-inline Vec3 Vec3::operator/(real s) const
+inline Vec3 Vec3::operator/(double s) const
 {
     Vec3 w(elt[0]/s, elt[1]/s, elt[2]/s);
     return w;
 }
 
-inline real Vec3::operator*(const Vec3& v) const
+inline double Vec3::operator*(const Vec3& v) const
 {
     return elt[0]*v[0] + elt[1]*v[1] + elt[2]*v[2];
 }
@@ -142,40 +144,26 @@ inline Vec3 Vec3::operator^(const Vec3& v) const
     return w;
 }
 
-inline real Vec3::length()
+inline double Vec3::length()
 {
     return norm();
 }
 
-inline real Vec3::norm()
+inline double Vec3::norm()
 {
     return sqrt(elt[0]*elt[0] + elt[1]*elt[1] + elt[2]*elt[2]);
 }
 
-inline real Vec3::norm2()
+inline double Vec3::norm2()
 {
     return elt[0]*elt[0] + elt[1]*elt[1] + elt[2]*elt[2];
 }
 
-inline real Vec3::unitize()
+inline double Vec3::unitize()
 {
-    real l=norm();
+    double l=norm();
     if( l!=1.0 )
 	(*this)/=l;
     return l;
 }
 
-#ifdef IOSTREAMH
-inline ostream& operator<<(ostream& out, const Vec3& v)
-{
-    return out << "[" << v[0] << " " << v[1] << " " << v[2] << "]";
-}
-
-inline istream& operator>>(istream& in, Vec3& v)
-{
-    return in >> "[" >> v[0] >> v[1] >> v[2] >> "]";
-}
-#endif
-
-
-#endif

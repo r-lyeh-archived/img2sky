@@ -13,7 +13,7 @@ void Map::findLimits()
     for(int i=0;i<width;i++)
 	for(int j=0;j<height;j++)
 	{
-	    real val = eval(i,j);
+	    double val = eval(i,j);
 
 	    if( val<min ) min = val;
 	    if( val>max ) max = val;

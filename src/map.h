@@ -1,6 +1,7 @@
 #ifndef MAP_INCLUDED // -*- C++ -*-
 #define MAP_INCLUDED
 
+#include <cassert>
 #include <stdlib.h>
 #include <iostream>
 
@@ -14,12 +15,12 @@ public:
     int height;
     int depth;  // in bits
 
-    real min, max;
+    double min, max;
 
-    real operator()(int i, int j) { return eval(i,j); }
-    real operator()(real i, real j) { return eval((int)i,(int)j); }
-    real eval(real i, real j) { return eval((int)i,(int)j); }
-    virtual real eval(int i, int j) = 0;
+    double operator()(int i, int j) { return eval(i,j); }
+    double operator()(double i, double j) { return eval((int)i,(int)j); }
+    double eval(double i, double j) { return eval((int)i,(int)j); }
+    virtual double eval(int i, int j) = 0;
 
     virtual void rawRead(std::istream&) = 0;
     virtual void textRead(std::istream&) = 0;
@@ -40,9 +41,7 @@ class DirectMap : public Map
 protected:
     inline T& ref(int i,int j)
     {
-#ifdef SAFETY
 	assert(i>=0); assert(j>=0); assert(i<width); assert(j<height);
-#endif
 
 	return data[j*width + i];
     }
@@ -51,7 +50,7 @@ public:
 
     DirectMap(int width, int height);
 
-    real eval(int i, int j) { return (real)ref(i,j); }
+    double eval(int i, int j) { return (double)ref(i,j); }
     void *getBlock() { return data; }
 
     void rawRead(std::istream&);
@@ -61,7 +60,7 @@ public:
 typedef DirectMap<unsigned char>  ByteMap;
 typedef DirectMap<unsigned short> ShortMap;
 typedef DirectMap<unsigned int>   WordMap;
-typedef DirectMap<real>           RealMap;
+typedef DirectMap<double>           doubleMap;
 
 
 
@@ -95,7 +94,7 @@ void DirectMap<T>::textRead(std::istream& in)
     for(int j=0;j<height;j++)
 	for(int i=0;i<width;i++)
 	{
-	    real val;
+	    double val;
 	    in >> val;
 	    ref(i,j) = (T)val;
 	}

@@ -16,31 +16,13 @@
 #define PI 3.1415926535897932384626433832795
 #endif
 
-using namespace std;
-
-void generate_output(const char *filename, FileFormat format)
-{
-    //
-    // If the user doesn't want output, don't do it.
-    if(!filename)
-        return;
-
-    switch(format ) {
-    case PLYfile:
-        output_ply(filename);
-        break;
-    default:
-        // Do nothing for unknown formats
-        break;
-    }
-}
-
 
 
 static std::ostream *output_stream;
 
 /////////////////////////////////////////////////////////////////////////////////////
 
+extern bool make_sphere;
 static unsigned ply_faces = 0;
 
 static void ply_face(Triangle& T, void *closure)
@@ -60,20 +42,36 @@ static void ply_face(Triangle& T, void *closure)
     ply_faces++;    
 }
 
-extern bool make_sphere;
-
 static void ply_vertex(::ostream& out, int x, int y, int z = 0)
 {
     TGAPixel32 p = TGA->GetPixelA(x, y);
 
     if( make_sphere ) {
         double R = 10, LAT, LON;
+
+        if( 0 ) {
+            double u = double(x) / (DEM->width-1);
+            double v = double(y) / (DEM->height-1);
+
+            double xy = -2 * PI * u; // xy angle
+            double zz = PI * v;      // z  angle
+
+            double px = R * cos(xy) * sin(zz);
+            double py = R * sin(xy) * sin(zz);
+            double pz = R * cos(zz);
+
+            out << px << " " << py << " " << pz << " " << int(p.R) << " " << int(p.G) << " " << int(p.B) << " " << int(p.A) << std::endl;
+            return;
+        }
+
+
         
         if(0) {
             // mercator projection
             LON = x / R;
             LAT = 2 * atan(exp(y/R)) - PI/2;
         } else {
+            // this is very naive :s            
             double lx = ( double(x) / (DEM->width-1) ) * 360 - 180;
             double ly = ( double(y) / (DEM->height-1) ) * 180 - 90;
             LAT = ly * PI/180;
@@ -101,7 +99,7 @@ static void ply_vertex(::ostream& out, int x, int y, int z = 0)
     }
 }
 
-void output_ply(const char *filename)
+bool output_ply(const char *filename)
 {
     std::stringstream sout;
     output_stream = &sout;
@@ -129,7 +127,7 @@ void output_ply(const char *filename)
     ::ofstream out(filename);
     out << "ply" << std::endl;
     out << "format ascii 1.0" << std::endl;
-    out << "comment author: https://github.com/r-lyeh/hw2builder" << std::endl;
+    out << "comment author: https://github.com/r-lyeh/img2sky" << std::endl;
     out << "comment object: vertex-color mesh" << std::endl;
     out << "element vertex " << index << std::endl;
     out << "property float x" << std::endl;
@@ -143,6 +141,9 @@ void output_ply(const char *filename)
     out << "property list uchar int vertex_index" << std::endl;
     out << "end_header" << std::endl;
     out << sout.rdbuf();
+    std::cout << " (tris: "<< ply_faces << ") (" << (out.tellp() / 1024) << " KiB)";
     out.close();
+
+    return out.good();
 }
 

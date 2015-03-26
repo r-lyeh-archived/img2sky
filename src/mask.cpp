@@ -6,7 +6,7 @@
 #include "Mask.h"
 
 
-RealMask *readMask(std::istream& in)
+realMask *readMask(std::istream& in)
 {
     char magicP, magicNum;
 
@@ -21,14 +21,14 @@ RealMask *readMask(std::istream& in)
 	return NULL;
     }
 
-    RealMask *mask = new RealMask(width, height);
+    realMask *mask = new realMask(width, height);
 
     if( magicNum == '2' )
     {
 	for(int j=0; j<height; j++)
 	    for(int i=0; i<width; i++)
 	    {
-		real val;
+		double val;
 		in >> val;
 		mask->ref(i, j) = val;
 	    }
@@ -40,7 +40,7 @@ RealMask *readMask(std::istream& in)
 	    {
 		unsigned char val;
 		in >> val;
-		mask->ref(i, j) = (real)val;
+		mask->ref(i, j) = (double)val;
 	    }
     }
     else
@@ -50,7 +50,7 @@ RealMask *readMask(std::istream& in)
     }
 
 
-    real max = (real)maxval;
+    double max = (double)maxval;
 
     for(int i=0; i<width; i++)
 	for(int j=0; j<height; j++)

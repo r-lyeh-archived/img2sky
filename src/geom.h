@@ -1,72 +1,42 @@
-#ifndef GEOM_INCLUDED // -*- C++ -*-
-#define GEOM_INCLUDED
+#pragma once
 
-////////////////////////////////////////////////////////////////////////
-//
-// Define some basic types and values
-//
-////////////////////////////////////////////////////////////////////////
-
-#ifdef SAFETY
 #include <assert.h>
-#endif
-
-typedef double real;
+#include <math.h>
 
 #define EPS 1e-6
 #define EPS2 (EPS*EPS)
-
-typedef int boolean;
-
-enum Axis {X, Y, Z, W};
-enum Side {Left=-1, On=0, Right=1};
-
-#include <math.h>
 #include "Vec2.h"
 #include "Vec3.h"
 
-#ifndef NULL
-#define NULL 0
-#endif
-
-#ifndef True
-#define True 1
-#define False 0
-#endif
+enum Axis {X, Y, Z, W};
+enum Side {Left=-1, On=0, Right=1};
 
 class Labelled {
 public:
     int token;
 };
 
-
-
-
-////////////////////////////////////////////////////////////////////////
-//
 // Here we define some useful geometric functions
-//
-////////////////////////////////////////////////////////////////////////
 
 //
 // triArea returns TWICE the area of the oriented triangle ABC.
 // The area is positive when ABC is oriented counterclockwise.
-inline real triArea(const Vec2& a, const Vec2& b, const Vec2& c)
+inline double triArea(const Vec2& a, const Vec2& b, const Vec2& c)
 {
     return (b[X] - a[X])*(c[Y] - a[Y]) - (b[Y] - a[Y])*(c[X] - a[X]);
 }
 
-inline boolean ccw(const Vec2& a, const Vec2& b, const Vec2& c)
+inline bool ccw(const Vec2& a, const Vec2& b, const Vec2& c)
 {
     return triArea(a, b, c) > 0;
 }
 
-inline boolean rightOf(const Vec2& x, const Vec2& org, const Vec2& dest)
+inline bool rightOf(const Vec2& x, const Vec2& org, const Vec2& dest)
 {
     return ccw(x, dest, org);
 }
 
-inline boolean leftOf(const Vec2& x, const Vec2& org, const Vec2& dest)
+inline bool leftOf(const Vec2& x, const Vec2& org, const Vec2& dest)
 {
     return ccw(x, org, dest);
 }
@@ -74,7 +44,7 @@ inline boolean leftOf(const Vec2& x, const Vec2& org, const Vec2& dest)
 // Returns True if the point d is inside the circle defined by the
 // points a, b, c. See Guibas and Stolfi (1985) p.107.
 //
-inline boolean inCircle(const Vec2& a, const Vec2& b, const Vec2& c,
+inline bool inCircle(const Vec2& a, const Vec2& b, const Vec2& c,
 			const Vec2& d)
 {
     return (a[0]*a[0] + a[1]*a[1]) * triArea(b, c, d) -
@@ -83,101 +53,77 @@ inline boolean inCircle(const Vec2& a, const Vec2& b, const Vec2& c,
 	   (d[0]*d[0] + d[1]*d[1]) * triArea(a, b, c) > EPS;
 }
 
-
 
 class Plane {
 public:
 
-    real a, b, c;
+    double a, b, c;
 
     Plane() { }
     Plane(const Vec3& p, const Vec3& q, const Vec3& r) { init(p,q,r); }
 
-    inline void init(const Vec3& p, const Vec3& q, const Vec3& r);
+    // find the plane z=ax+by+c passing through three points p,q,r
+    void init(const Vec3& p, const Vec3& q, const Vec3& r) {
+        // We explicitly declare these (rather than putting them in a
+        // Vector) so that they can be allocated into registers.
+        double ux = q[X]-p[X], uy = q[Y]-p[Y], uz = q[Z]-p[Z];
+        double vx = r[X]-p[X], vy = r[Y]-p[Y], vz = r[Z]-p[Z];
+        double den = ux*vy-uy*vx;
 
-    real operator()(real x,real y) { return a*x + b*y + c; }
-    real operator()(int x, int y)  { return a*x + b*y + c; }
+        a = (uz*vy - uy*vz)/den;
+        b = (ux*vz - uz*vx)/den;
+        c = p[Z] - a*p[X] - b*p[Y];
+    }
+
+    double operator()(double x,double y) { return a*x + b*y + c; }
+    double operator()(int x, int y)  { return a*x + b*y + c; }
 };
-
-inline void Plane::init(const Vec3& p, const Vec3& q, const Vec3& r)
-// find the plane z=ax+by+c passing through three points p,q,r
-{
-    // We explicitly declare these (rather than putting them in a
-    // Vector) so that they can be allocated into registers.
-    real ux = q[X]-p[X], uy = q[Y]-p[Y], uz = q[Z]-p[Z];
-    real vx = r[X]-p[X], vy = r[Y]-p[Y], vz = r[Z]-p[Z];
-    real den = ux*vy-uy*vx;
-
-    a = (uz*vy - uy*vz)/den;
-    b = (ux*vz - uz*vx)/den;
-    c = p[Z] - a*p[X] - b*p[Y];
-}
-
-
 
 class Line {
 
 private:
-    real a, b, c;
+    double a, b, c;
 
 public:
-    Line(const Vec2& p, const Vec2& q)
-    {
-	Vec2 t = q - p;
-	real l = t.length();
-#ifdef SAFETY
-	assert(l!=0);
-#endif
-	a =   t[Y] / l;
-	b = - t[X] / l;
-	c = -(a*p[X] + b*p[Y]);
+    Line(const Vec2& p, const Vec2& q) {
+    	Vec2 t = q - p;
+    	double l = t.length();
+    	assert(l!=0);
+    	a =   t[Y] / l;
+    	b = - t[X] / l;
+    	c = -(a*p[X] + b*p[Y]);
     }
 
-    inline real eval(const Vec2& p) const
-    {
-	return (a*p[X] + b*p[Y] + c);
+    double eval(const Vec2& p) const {
+    	return (a*p[X] + b*p[Y] + c);
     }
 
-    inline Side classify(const Vec2& p) const
-    {
-	real d = eval(p);
+    Side classify(const Vec2& p) const {
+    	double d = eval(p);
 
-	if( d < -EPS )
-	    return Left;
-	else if( d > EPS )
-	    return Right;
-	else
-	    return On;
+    	if( d < -EPS )
+    	    return Left;
+    	else if( d > EPS )
+    	    return Right;
+    	else
+    	    return On;
     }
 
-    inline Vec2 intersect(const Line& l) const
-    {
-	Vec2 p;
-	intersect(l, p);
-	return p;
+    Vec2 intersect(const Line& l) const {
+    	Vec2 p;
+    	intersect(l, p);
+    	return p;
     }
 
-    inline void intersect(const Line& l, Vec2& p) const
-    {
-	real den = a*l.b - b*l.a;
-#ifdef SAFETY
-	assert(den!=0);
-#endif
-	p[X] = (b*l.c - c*l.b)/den;
-	p[Y] = (c*l.a - a*l.c)/den;
+    void intersect(const Line& l, Vec2& p) const {
+    	double den = a*l.b - b*l.a;
+    	assert(den!=0);
+    	p[X] = (b*l.c - c*l.b)/den;
+    	p[Y] = (c*l.a - a*l.c)/den;
     }
 
-#ifdef IOSTREAMH
-    friend ostream& operator<<(ostream&, const Line&);
-#endif
+    template<typename ostream>
+    inline friend ostream& operator<<( ostream &out, const Line &self ) {
+        return out << "Line(a=" << self.a << " b=" << self.b << " c=" << self.c << ")";
+    }
 };
-
-#ifdef IOSTREAMH
-inline ostream& operator<<(ostream &out, const Line& l)
-{
-    return out << "Line(a=" << l.a << " b=" << l.b << " c=" << l.c << ")";
-}
-#endif
-
-
-#endif

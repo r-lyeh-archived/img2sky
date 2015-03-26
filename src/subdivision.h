@@ -57,8 +57,8 @@ protected:
 
     //
     // Some random functions
-    boolean ccwBoundary(const Edge *e);
-    boolean onEdge(const Vec2&, Edge *);
+    bool ccwBoundary(const Edge *e);
+    bool onEdge(const Vec2&, Edge *);
 
 public:
 
@@ -66,10 +66,10 @@ public:
 
     //
     // virtual functions for customization
-    virtual boolean shouldSwap(const Vec2&, Edge *);
+    virtual bool shouldSwap(const Vec2&, Edge *);
 
 
-    boolean isInterior(Edge *);
+    bool isInterior(Edge *);
 
     Edge *spoke(Vec2&, Edge *e);
     void optimize(Vec2&, Edge *);
