@@ -5,19 +5,19 @@
 - That said, resulting vertex-color meshes are good as a background of your skybox. Once rendered, you are supposed to top it with shiny billboards, submeshes, stars, galaxies, nebulas, suns, clouds, zeppelins and flying cows.
 
 ## Download
-[v0.0.1 (win32 pre-built binary)](img2sky.exe)
+[v0.0.2 (win32 pre-built binary)](img2sky.exe)
 
 ## Usage and options
 ```c++
 ~/prj/img2sky> img2sky
-img2sky: img2sky 0.0.1 (RELEASE). Compiled on Mar 26 2015 - https://github.com/r-lyeh/img2sky
+img2sky.exe: img2sky 0.0.2 (RELEASE). Compiled on Mar 27 2015 - https://github.com/r-lyeh/img2sky
 
 Usage:
-    img2sky [options] image.img [...]
+    img2sky [options] input.img [...]
         -q,--quality float     Quality for vertex density [0..100] (lowest..highest) (default: 50.00)
         -v,--vertices integer  Specify maximum number of vertices [4..N] (default: disabled)
+        -s,--sphere float      Create sphere mesh of given float radius (default: plane)
         -f,--fast              Disable triangle stripification (default: enabled)
-        -s,--sphere            Create sphere mesh (default: plane)
 
     img2sky reads .bmp, .dds, .gif, .hdr, .jpg, .pic, .pkm, .png, .psd, .pvr, .svg, .tga, .webp, .pnm, .pug texture files.
     img2sky writes .ply mesh files.
@@ -25,7 +25,7 @@ Usage:
 Quality and number of vertices should be mutually exclusive options. You can specify both at same time, but does not make much sense at all.
 And if you are the expensive/smooth meshes guy kind, then use larger textures, increase quality and/or number of vertices.
 
-~/prj/img2sky> img2sky --plane --quality 12.5 images/*.webp
+~/prj/img2sky> img2sky --quality 12.5 images/*.webp
 [ OK ] images/image.webp -> images/image.webp.ply (plane) (error-threshold: 4.15888) (max-error: 4.13793) (vertices: 1659) (tris: 3298) (92 KiB)
 ```
 
@@ -61,4 +61,4 @@ And if you are the expensive/smooth meshes guy kind, then use larger textures, i
 - Additional code by r-lyeh, Public Domain.
 
 ## Credits
-- Sample images taken from [http://walter-nest.deviantart.com/gallery/44007823/Homeworld-2](Walter Nest's hw2 deviantart library).
+- Sample images taken from [Walter Nest's hw2 deviantart library](http://walter-nest.deviantart.com/gallery/44007823/Homeworld-2).

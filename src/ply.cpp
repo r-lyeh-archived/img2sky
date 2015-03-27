@@ -47,7 +47,9 @@ static void ply_vertex(::ostream& out, int x, int y, int z = 0)
     TGAPixel32 p = TGA->GetPixelA(x, y);
 
     if( make_sphere ) {
-        double R = 10, LAT, LON;
+        extern double radius;
+        double &R = radius;
+        double LAT, LON;
 
         if( 0 ) {
             double u = double(x) / (DEM->width-1);
