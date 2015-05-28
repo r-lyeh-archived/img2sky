@@ -23,3 +23,10 @@ extern void	subsample_insertion(int target_width);
 
 // output.cpp
 extern bool	output_ply(const char *filename);
+
+enum geometry {
+	plane,
+	curve,
+	sphere,
+	hemisphere,
+};

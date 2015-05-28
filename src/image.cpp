@@ -23,6 +23,8 @@ bool TGAFile::ReadTGA(const char *szFileName) {
 	if (!img.loaded())
 		goto Failure;
 
+	img = img.flip_h(); // original implementation expects a flipped image, so we flip it here
+
 	CleanUp();
 
 	hdr.usWidth = img.w;

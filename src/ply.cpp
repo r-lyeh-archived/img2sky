@@ -11,6 +11,7 @@
 
 #include "tri_stripper.h"
 #include "mat4_transform.h"
+#include "main.h"
 
 #ifndef PI
 #define PI 3.1415926535897932384626433832795
@@ -22,7 +23,8 @@ static std::ostream *output_stream;
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-extern bool make_sphere;
+extern double radius;
+extern unsigned make_geometry;
 static unsigned ply_faces = 0;
 
 static void ply_face(Triangle& T, void *closure)
@@ -46,8 +48,7 @@ static void ply_vertex(::ostream& out, int x, int y, int z = 0)
 {
     TGAPixel32 p = TGA->GetPixelA(x, y);
 
-    if( make_sphere ) {
-        extern double radius;
+    if( make_geometry == sphere || make_geometry == hemisphere ) {
         double &R = radius;
         double LAT, LON;
 
@@ -75,7 +76,11 @@ static void ply_vertex(::ostream& out, int x, int y, int z = 0)
         } else {
             // this is very naive :s            
             double lx = ( double(x) / (DEM->width-1) ) * 360 - 180;
-            double ly = ( double(y) / (DEM->height-1) ) * 180 - 90;
+            double ly = ( double(y) / (DEM->height-1) ) * 180 - 90;                
+            if( make_geometry != sphere ) {
+                // assume a hemisphere
+                lx = ( double(x) / (DEM->width-1) ) * 180 - 90;
+            }
             LAT = ly * PI/180;
             LON = lx * PI/180;
         }
@@ -96,7 +101,17 @@ static void ply_vertex(::ostream& out, int x, int y, int z = 0)
         // return vec2( lat, lon );
         // }
     } else {
-        out << x << " " << y << " " << z << " " << int(p.R) << " " << int(p.G) << " " << int(p.B) << " " << int(p.A) << std::endl;
+
+        if(make_geometry == curve) {
+            double fx = double(x) / DEM->width * 2.0 - 1.0;     // map [-1..1]
+            double fy = double(y) / DEM->height * 2.0 - 1.0;    // map [-1..1]
+            double fd = sqrt((fx*fx + fy*fy) / 2.0);            // normalized length from center
+            double lz = radius * fd * fd;
+
+            out << x << " " << y << " " << lz << " " << int(p.R) << " " << int(p.G) << " " << int(p.B) << " " << int(p.A) << std::endl;            
+        } else {
+            out << x << " " << y << " " << z << " " << int(p.R) << " " << int(p.G) << " " << int(p.B) << " " << int(p.A) << std::endl;
+        }
         return;     
     }
 }

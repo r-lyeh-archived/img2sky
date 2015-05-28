@@ -5,19 +5,22 @@
 - That said, resulting vertex-color meshes are good as a background of your skybox. Once rendered, you are supposed to top it with shiny billboards, submeshes, stars, galaxies, nebulas, suns, clouds, zeppelins and flying cows.
 
 ## Download
-[v0.0.2 (win32 pre-built binary)](img2sky.exe)
+[v0.0.3 (win32 pre-built binary)](img2sky.exe)
 
 ## Usage and options
 ```c++
 ~/prj/img2sky> img2sky
-img2sky.exe: img2sky 0.0.2 (RELEASE). Compiled on Mar 27 2015 - https://github.com/r-lyeh/img2sky
+img2sky.exe: img2sky 0.0.3 (RELEASE). Compiled on May 28 2015 - https://github.com/r-lyeh/img2sky
 
 Usage:
     img2sky [options] input.img [...]
-        -q,--quality float     Quality for vertex density [0..100] (lowest..highest) (default: 50.00)
-        -v,--vertices integer  Specify maximum number of vertices [4..N] (default: disabled)
-        -s,--sphere float      Create sphere mesh of given float radius (default: plane)
-        -f,--fast              Disable triangle stripification (default: enabled)
+        -q,--quality float       Quality for vertex density [0..100] (lowest..highest) (default: 50.00)
+        -v,--vertices integer    Specify maximum number of vertices [4..N] (default: disabled)
+        -p,--plane               Create plane mesh of given (default geometry)
+        -s,--sphere float        Create sphere mesh of given float radius (default: 10.00)
+        -h,--hemisphere float    Create hemisphere mesh of given float radius (default: 10.00)
+        -c,--curve float         Create a curved plane, displacement along z can be specified next (default: 10.00)
+        -f,--fast                Disable triangle stripification (default: slow)
 
     img2sky reads .bmp, .dds, .gif, .hdr, .jpg, .pic, .pkm, .png, .psd, .pvr, .svg, .tga, .webp, .pnm, .pug texture files.
     img2sky writes .ply mesh files.
@@ -25,8 +28,8 @@ Usage:
 Quality and number of vertices should be mutually exclusive options. You can specify both at same time, but does not make much sense at all.
 And if you are the expensive/smooth meshes guy kind, then use larger textures, increase quality and/or number of vertices.
 
-~/prj/img2sky> img2sky --quality 12.5 images/*.webp
-[ OK ] images/image.webp -> images/image.webp.ply (plane) (error-threshold: 4.15888) (max-error: 4.13793) (vertices: 1659) (tris: 3298) (92 KiB)
+~/prj/img2sky> img2sky --quality 12.5 images/*.webp --curve 30.0
+[ OK ] image.webp -> image.webp.curve.ply (error-threshold: 4.15888) (curve-displacement: 30) (max-error: 4.13793) (vertices: 1656) (tris: 3292) (102 KiB)
 ```
 
 ## Sample showcase
@@ -54,6 +57,15 @@ And if you are the expensive/smooth meshes guy kind, then use larger textures, i
 - Additional tech information can be found on following links:
   - [Homeworld 2: Backgrounds Tech (I)](http://simonschreibt.de/gat/homeworld-2-backgrounds)
   - [Homeworld 2: Backgrounds Tech (II)](http://simonschreibt.de/gat/homeworld-2-backgrounds-tech/)
+
+## Changelog
+- v0.0.3 (2015/05/28)
+  - Options for plane and custom curved planes and hemispheres (@perfectforwarding)
+  - Bugfixed vertically flipped geometries
+- v0.0.2 (2015/03/27)
+  - Customizable radius sphere
+- v0.0.1 (2015/03/26)
+  - Initial revision
 
 ## Licenses
 - Original [hw2bgbuilder code v1.3 by 4E534B, Michael Garland and evillejedi](http://forums.relicnews.com/showthread.php?148734-Homeworld2-Background-Builder-v1-3), unknown license.

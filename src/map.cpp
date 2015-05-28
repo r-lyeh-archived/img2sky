@@ -23,8 +23,6 @@ void Map::findLimits()
 
 Map *readTGA(const char *filename)
 {
-	std::cout << "[    ] " << filename << " -> " << filename << ".ply";
-
 	TGA = new TGAFile;
 	TGA->ReadTGA(filename);
 

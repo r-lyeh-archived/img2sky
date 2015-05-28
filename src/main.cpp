@@ -10,8 +10,10 @@
 
 #define IMG2SKY_BUILD "DEBUG"
 #define IMG2SKY_URL "https://github.com/r-lyeh/img2sky"
-#define IMG2SKY_VERSION "0.0.2"
 #define IMG2SKY_TEXT "img2sky " IMG2SKY_VERSION " (" IMG2SKY_BUILD ")"
+#define IMG2SKY_VERSION "0.0.3" /* options for plane and custom curved planes and hemispheres (@perfectforwarding); Bugfixed vertically flipped images (@r-lyeh)
+#define IMG2SKY_VERSION "0.0.2" // customizable radius sphere
+#define IMG2SKY_VERSION "0.0.1" // initial revision */
 
 #if defined(NDEBUG) || defined(_NDEBUG)
 #undef  IMG2SKY_BUILD
@@ -30,11 +32,11 @@ double Q( double q ) {
     return abs(-log(q*q/10000.0));
 }
 
-bool            make_sphere         = false;
+unsigned        make_geometry       = plane;
 bool            strip_hod           = true;
 unsigned long   point_limit         = -1;
 double          error_threshold     = Q(50.00); // defaults to quality 50%
-double          radius              = 10;       // default radius size
+double          radius              = 10;       // default radius size (or planar displacement when make_curved is selected)
 
 std::vector<std::string> to_process;
 std::stringstream used_options;
@@ -53,10 +55,13 @@ void help( const std::string &arg0 ) {
     std::cout << std::endl;
     std::cout << "Usage:" << std::endl;
     std::cout << "    img2sky [options] input.img [...]" << std::endl;
-    std::cout << "        -q,--quality float     Quality for vertex density [0..100] (lowest..highest) (default: 50.00)" << std::endl;
-    std::cout << "        -v,--vertices integer  Specify maximum number of vertices [4..N] (default: disabled)" << std::endl;
-    std::cout << "        -s,--sphere float      Create sphere mesh of given float radius (default: plane)" << std::endl;
-    std::cout << "        -f,--fast              Disable triangle stripification (default: enabled)" << std::endl;
+    std::cout << "        -q,--quality float       Quality for vertex density [0..100] (lowest..highest) (default: 50.00)" << std::endl;
+    std::cout << "        -v,--vertices integer    Specify maximum number of vertices [4..N] (default: disabled)" << std::endl;
+    std::cout << "        -p,--plane               Create plane mesh of given (default geometry)" << std::endl;
+    std::cout << "        -s,--sphere float        Create sphere mesh of given float radius (default: 10.00)" << std::endl;
+    std::cout << "        -h,--hemisphere float    Create hemisphere mesh of given float radius (default: 10.00)" << std::endl;
+    std::cout << "        -c,--curve float         Create a curved plane, displacement along z can be specified next (default: 10.00)" << std::endl;
+    std::cout << "        -f,--fast                Disable triangle stripification (default: slow)" << std::endl;
     std::cout << std::endl;
 
     std::string sep;
@@ -88,7 +93,7 @@ bool parse_cmdline( int argc, const char **argv ) {
         const char *arg = sarg.c_str();
 
         // Help
-        if (!strcmp(arg, "-h") || !strcmp(arg, "--help") || !strcmp(arg, "/?")) {
+        if (!strcmp(arg, "-?") || !strcmp(arg, "--help") || !strcmp(arg, "/?")) {
             help(argv[0]);
             return true;
         }
@@ -104,23 +109,46 @@ bool parse_cmdline( int argc, const char **argv ) {
         }
 
         // Set vertex limit
-        if (i + 1 < argc)
         if (!strcmp(arg, "-v") || !strcmp(arg, "--vertices") || !strcmp(arg, "/vertices")) {
-            point_limit = strtoul(argv[++i], 0, 0);
-            if( point_limit < 4 ) point_limit = 4;
-            
+            if(i < argc - 1) {
+                auto d = strtoul(argv[++i], 0, 0);
+                point_limit = ( d < 4 ? 4 : d );
+            }
             used_options << " (point-limit: " << point_limit << ")";
             continue;
         }
 
         // Set mesh type
-        if (i + 1 < argc)
+        if (!strcmp(arg, "-p") || !strcmp(arg, "--plane") || !strcmp(arg, "/plane")) {
+            make_geometry = plane;
+            used_options << " (plane)";
+            continue;
+        }
         if (!strcmp(arg, "-s") || !strcmp(arg, "--sphere") || !strcmp(arg, "/sphere")) {
-            make_sphere = true;
-            radius = strtoul(argv[++i], 0, 0);
-            if( radius < 1 ) radius = 1;
-            
+            make_geometry = sphere;
+            if(i < argc - 1) {
+                double d = atof(argv[++i]);
+                radius = ( d < 1 ? 1 : d );
+            }
             used_options << " (sphere-radius: " << radius << ")";
+            continue;
+        }
+        if (!strcmp(arg, "-h") || !strcmp(arg, "--hemisphere") || !strcmp(arg, "/hemisphere")) {
+            make_geometry = hemisphere;
+            if(i < argc - 1) {
+                double d = atof(argv[++i]);
+                radius = ( d < 1 ? 1 : d );
+            }
+            used_options << " (hemisphere-radius: " << radius << ")";
+            continue;
+        }
+        if (!strcmp(arg, "-c") || !strcmp(arg, "--curve") || !strcmp(arg, "/curve")) {
+            make_geometry = curve;
+            if(i < argc - 1) {
+                double d = atof(argv[++i]);
+                radius = ( d < 1 ? 1 : d );
+            }
+            used_options << " (curve-displacement: " << radius << ")";
             continue;
         }
 
@@ -151,9 +179,16 @@ int main(int argc, const char **argv) {
     unsigned errors = 0;
     for( auto &file : to_process ) {
         // Set the output filename.
-        auto ply = std::string() + file + ".ply";
+        auto ply = std::string() + file;
+        /**/ if( make_geometry == curve )      ply += ".curve";
+        else if( make_geometry == sphere )     ply += ".sphere";
+        else if( make_geometry == plane )      ply += ".plane";
+        else if( make_geometry == hemisphere ) ply += ".hemisphere";
+        else /* ? */;
+        ply += ".ply";
 
         ////////////////////////////////////////////////////////////////
+        std::cout << "[    ] " << file << " -> " << ply;
         DEM = readTGA(file.c_str());
 
         if(!DEM) {
